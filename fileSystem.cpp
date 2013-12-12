@@ -8,22 +8,20 @@
 
 using namespace std;
 
-
 bool interested_cout[2];
 int turn_cout;
 
-void enterRegion_cout(int threadId)
-{
-    int other = 1 - threadId;
-    interested_cout[threadId] = true;
-    turn_cout = other;
+void enterRegion_cout(int threadId) {
+	int other = 1 - threadId;
+	interested_cout[threadId] = true;
+	turn_cout = other;
 
-    while (turn_cout == other && interested_cout[other]);
+	while (turn_cout == other && interested_cout[other])
+		;
 }
 
-void leaveRegion_cout(int threadId)
-{
-    interested_cout[threadId] = false;
+void leaveRegion_cout(int threadId) {
+	interested_cout[threadId] = false;
 }
 
 struct file {
@@ -87,7 +85,7 @@ bool analis(string str, int th) {
 		return false;
 	}
 	enterRegion(th, fff);
-	if (!com.compare("cut")) {
+	if (!com.compare("cat")) {
 		if (system_file.count(fff) == 0)
 			cout << "Файл " << fff << " не найден.\n";
 		else {
@@ -100,10 +98,16 @@ bool analis(string str, int th) {
 			char ch;
 			string str = "";
 			while ((ch = cin.get()) != 27) {
-				str += ch;
+				if (cin.eof())
+					cin.clear();
+				else
+					str += ch;
 			}
-			while ((ch = cin.get()) != '\n')
-				;
+			while ((ch = cin.get()) != '\n') {
+				if (cin.eof())
+					cin.clear();
+			}
+
 			system_file[fff].data_file = str;
 		}
 	} else if (!com.compare("delete")) {
@@ -121,28 +125,28 @@ bool analis(string str, int th) {
 	return true;
 }
 void* get_file_sizes(void *th_id) {
-	int id = (int) th_id;
+	int id = *((int*) (&th_id));
 	for (it_type iterator = system_file.begin(); iterator != system_file.end();
 			iterator++) {
 		enterRegion(id, iterator->first);
 		enterRegion_cout(id);
-		cout << id<< " : " << iterator->first << " : " << iterator->second.data_file.length()
-				<< endl;
+		cout << id << " : " << iterator->first << " : "
+				<< iterator->second.data_file.length() << endl;
 		leaveRegion_cout(id);
 		leaveRegion(id, iterator->first);
 	}
 	pthread_exit(NULL);
 	return 0;
 }
-void test_programm(){
+void test_programm() {
 	pthread_t thread1, thread2;
 	int id = 0;
 
-	pthread_create( &thread1, NULL, get_file_sizes, (void*) id);
+	pthread_create(&thread1, NULL, get_file_sizes, (void*) id);
 	id = 1;
-	pthread_create( &thread2, NULL, get_file_sizes, (void*) id);
-	pthread_join( thread1, NULL);
-	pthread_join( thread2, NULL);
+	pthread_create(&thread2, NULL, get_file_sizes, (void*) id);
+	pthread_join(thread1, NULL);
+	pthread_join(thread2, NULL);
 }
 void init() {
 	ifstream ff;
@@ -161,11 +165,12 @@ void init() {
 			col = atoi(mas[1].c_str());
 			char *data_file = new char[col];
 			ff.read(data_file, col);
+			data_file[col]= '\0';
 			system_file[f_name].data_file = data_file;
 			system_file[f_name].interested[0] = false;
 			system_file[f_name].interested[1] = false;
 			ff.get();
-			delete[] data_file;
+			delete [] data_file;
 		}
 		ff.close();
 	} else
@@ -188,9 +193,11 @@ int main() {
 	for (;;) {
 		cout << "\n> ";
 		getline(cin, input_line);
+		if (cin.eof())
+			cin.clear();
 		if (!input_line.compare("exit"))
 			break;
-		if(!input_line.compare("test"))
+		if (!input_line.compare("test"))
 			test_programm();
 		else if (input_line.compare(""))
 			analis(input_line, 0);
